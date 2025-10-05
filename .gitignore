@@ -1,0 +1,7 @@
+#environment virtual
+.venv
+
+#environment donde irán las claves 
+.env
+
+
