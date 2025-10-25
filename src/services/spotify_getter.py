@@ -50,7 +50,7 @@ import urllib.parse
 import webbrowser
 from dataclasses import dataclass
 from http.server import BaseHTTPRequestHandler, HTTPServer
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, List
 
 import requests
 
@@ -409,6 +409,8 @@ class SpotifyUserClient:
         Requiere scope: user-read-email o user-read-private para datos más completos.
         """
         return self.api_request("GET", "/me")
+    
+    
 
     def get_user_playlists(self, limit: int = 20, offset: int = 0) -> Dict[str, Any]:
         return self.api_request(
@@ -417,7 +419,7 @@ class SpotifyUserClient:
 
     def get_recently_played(
         self,
-        limit: int = 20,
+        limit: int = 40,
         after: Optional[int] = None,
         before: Optional[int] = None,
     ) -> Dict[str, Any]:

@@ -341,19 +341,19 @@ class YouTubeMusicUserClient:
     # ------------------------
     def get_current_channel(self) -> Dict[str, Any]:
         # 'mine=true' requiere el scope de YouTube
-        return self.api_request("/channels", params={"part": "id,snippet", "mine": "true"})
+        return self.api_request("GET", "/channels", params={"part": "id,snippet", "mine": "true"})
 
     def get_my_playlists(self, max_results: int = 25, page_token: Optional[str] = None) -> Dict[str, Any]:
         params = {"part": "id,snippet,contentDetails", "mine": "true", "maxResults": max_results}
         if page_token:
             params["pageToken"] = page_token
-        return self.api_request("/playlists", params=params)
+        return self.api_request("GET", "/playlists", params=params)
 
     def get_playlist_items(self, playlist_id: str, max_results: int = 50, page_token: Optional[str] = None) -> Dict[str, Any]:
         params = {"part": "id,snippet,contentDetails", "playlistId": playlist_id, "maxResults": max_results}
         if page_token:
             params["pageToken"] = page_token
-        return self.api_request("/playlistItems", params=params)
+        return self.api_request("GET", "/playlistItems", params=params)
 
     def get_liked_videos(self, max_results: int = 25, page_token: Optional[str] = None) -> Dict[str, Any]:
         """Devuelve los vídeos marcados con 'Me gusta'. Puede estar restringido según la cuenta.
@@ -362,7 +362,61 @@ class YouTubeMusicUserClient:
         params = {"part": "id,snippet,contentDetails", "playlistId": "LL", "maxResults": max_results}
         if page_token:
             params["pageToken"] = page_token
-        return self.api_request("/playlistItems", params=params)
+        return self.api_request("GET","/playlistItems", params=params)
+    
+
+    def create_playlist(self, title: str, description: str = "", privacy_status: str = "private") -> Dict[str, Any]:
+        """Crea una playlist. Requiere scope: https://www.googleapis.com/auth/youtube"""
+        body = {
+            "snippet": {"title": title, "description": description},
+            "status": {"privacyStatus": privacy_status},
+        }
+        return self.api_request("POST", "/playlists",
+                                params={"part": "snippet,status"},
+                                json_body=body)
+    
+    def search_tracks(self, query: Optional[str] = None, *, track: Optional[str] = None,
+                  artist: Optional[str] = None, limit: int = 10) -> Dict[str, Any]:
+        """Busca vídeos y filtra los de categoría Música (categoryId=10)."""
+        if not query:
+            parts = [p for p in [track, artist] if p]
+            if not parts:
+                raise ValueError("Proporciona 'query' o al menos 'track'/'artist'.")
+            query = " - ".join(parts)
+        search = self.api_request("GET", "/search", params={
+            "part": "id,snippet",
+            "q": query,
+            "type": "video",
+            "maxResults": limit,
+        })
+        video_ids = [it.get("id", {}).get("videoId")
+                    for it in search.get("items", [])
+                    if it.get("id", {}).get("videoId")]
+        if not video_ids:
+            return {"items": []}
+        vids = self.api_request("GET", "/videos", params={
+            "part": "id,snippet,contentDetails",
+            "id": ",".join(video_ids),
+        })
+        items = [v for v in vids.get("items", [])
+                if v.get("snippet", {}).get("categoryId") == "10"]
+        return {"items": items}
+
+    def add_videos_to_playlist(self, playlist_id: str, video_ids: list[str]) -> list[Dict[str, Any]]:
+        """Añade uno o varios vídeos a una playlist. Requiere scope de edición (youtube)."""
+        results = []
+        for vid in video_ids:
+            body = {
+                "snippet": {
+                    "playlistId": playlist_id,
+                    "resourceId": {"kind": "youtube#video", "videoId": vid},
+                }
+            }
+            resp = self.api_request("POST", "/playlistItems",
+                                    params={"part": "snippet"},
+                                    json_body=body)
+            results.append(resp)
+        return results
 
 
 # Demo CLI

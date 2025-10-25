@@ -133,10 +133,7 @@ class SpotifyToYouTubeMigrator:
                 ok = prompt_yn(f"¿Migrar la playlist '{name}' ({count} pistas)?", default_yes=True)
                 if not ok:
                     continue
-            try:
-                self.migrate_playlist(playlist_id=pid, playlist_name=name)
-            except Exception as ex:
-                print(f"⚠️ Error migrando '{name}': {ex}")
+            self.migrate_playlist(playlist_id=pid, playlist_name=name)
 
     # ------------------------
     # Migrar una playlist
@@ -160,7 +157,8 @@ class SpotifyToYouTubeMigrator:
             title = info.get("title") if info else None
             channel = info.get("channel") if info else None
             plan.append(PlannedItem(track=name, artist=artist, video_id=vid, score=score, title=title, channel=channel, url=url))
-
+            # if len(plan) == 4:
+            #     break
         # 2) Crear/obtener playlist destino en YouTube
         dest = self.yt.get_or_create_playlist(title=playlist_name, description="Migrated from Spotify", privacy_status=self.privacy_status)
         dest_id = dest.get("id")

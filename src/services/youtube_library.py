@@ -430,7 +430,7 @@ class YouTubeMusicLibrary:
         avoid_duplicates: bool = True,
     ) -> List[Dict[str, Any]]:
         existing = set(self.list_playlist_video_ids(playlist_id)) if avoid_duplicates else set()
-        to_add = [v for v in video_ids if v and (v not in existing)]
+        to_add = [v.get("videoId") for v in video_ids if v.get("videoId") and (v.get("videoId") not in existing)]
         if not to_add:
             return []
         return self.client.add_videos_to_playlist(playlist_id=playlist_id, video_ids=to_add)

@@ -1,11 +1,13 @@
 from __future__ import annotations
 
-from typing import Dict, List, Optional, Iterator, Any
+from typing import Dict, List, Optional, Iterator, Any, Literal
+import requests
 
 # Importa tu cliente ya funcional
 # from spotify_client import SpotifyUserClient   # si lo tienes en otro módulo
 # En tu caso:
 from src.core.settings.spotify_service import get_spotify_settings
+from collections import deque
 spotify_settings = get_spotify_settings()
 # from <ruta_donde_este_tu_clase> import SpotifyUserClient
 
@@ -54,6 +56,96 @@ class SpotifyLibrary:
                 if max_total is not None and len(results) >= max_total:
                     return results[:max_total]
         return results
+    
+    def get_playlist_images(self, playlist_id: str) -> List[Dict[str, Any]]:
+        """
+        Devuelve el array de ImageObject de Spotify:
+        [{url, width, height}, ...] (orden habitual: mayor→menor).
+        """
+        endpoint = f"/playlists/{playlist_id}/images"
+        # api_request maneja auth; este endpoint devuelve JSON
+        images = self.client.api_request("GET", endpoint)
+        # Algunas libs devuelven dict; normalizamos a lista
+        if isinstance(images, dict):
+            images = images.get("images") or images.get("items") or []
+        return images or []
+
+    def get_best_playlist_image_url(
+        self,
+        playlist_id: str,
+        *,
+        strategy: Literal["largest", "smallest"] = "largest",
+    ) -> Optional[str]:
+        """
+        Selecciona la mejor URL según estrategia.
+        """
+        imgs = self.get_playlist_images(playlist_id)
+        if not imgs:
+            return None
+        def _w(o): 
+            # Algunos objetos pueden no traer width/height
+            return int(o.get("width") or 0)
+        imgs_sorted = sorted(imgs, key=_w, reverse=(strategy == "largest"))
+        return imgs_sorted[0].get("url")
+
+    def download_bytes_from_url(self, url: str, timeout: int = 20) -> Optional[bytes]:
+        """
+        Descarga bytes de imagen desde la CDN de Spotify (URLs temporales).
+        """
+        try:
+            r = requests.get(url, timeout=timeout)
+            r.raise_for_status()
+            return r.content
+        except Exception:
+            return None
+        
+
+
+    
+    def get_my_saved_tracks(
+        self,
+        max_total: Optional[int] = None,
+        page_size: int = 50,
+    ) -> List[Dict[str, Any]]:
+        """
+        Devuelve las canciones guardadas del usuario (Liked Songs) desde /me/tracks.
+        Estructura compatible con get_playlist_tracks():
+            {
+              id, name, duration_ms, is_local, added_at,
+              album: {id, name},
+              artists: [{id, name}, ...]
+            }
+        """
+        endpoint = "/me/tracks"
+        params = {
+            "limit": min(max(page_size, 1), 50),
+            "fields": (
+                "items(added_at,track(id,name,duration_ms,is_local,"
+                "album(id,name),artists(id,name))),next,total"
+            )
+        }
+        tracks: deque = deque(maxlen=max_total)
+        for page in self._paginate(endpoint, params=params):
+            for item in page.get("items", []) or []:
+                t = item.get("track")
+                if not t:
+                    continue
+                artists = t.get("artists") or []
+                tracks.append({
+                    "id": t.get("id"),
+                    "name": t.get("name"),
+                    "duration_ms": t.get("duration_ms"),
+                    "is_local": t.get("is_local"),
+                    "added_at": item.get("added_at"),
+                    "album": {
+                        "id": (t.get("album") or {}).get("id"),
+                        "name": (t.get("album") or {}).get("name"),
+                    },
+                    "artists": [{"id": a.get("id"), "name": a.get("name")} for a in artists],
+                })
+                if max_total is not None and len(tracks) >= max_total:
+                    return tracks[:max_total]
+        return list(reversed(tracks))
 
     # ------------------------
     # Pistas de una playlist
