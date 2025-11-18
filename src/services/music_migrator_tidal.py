@@ -3,6 +3,8 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 from typing import Any, Dict, Iterable, List, Optional, Tuple
+from pathlib import Path
+from datetime import datetime
 
 from .tidal_library import TidalLibrary
 from .spotify_library import SpotifyLibrary
@@ -178,7 +180,7 @@ class SpotifyToTidalMigrator:
             os.makedirs(out_dir, exist_ok=True)
 
             # Nombre de archivo: <playlist_id>.<ext>
-            filename = f"{playlist_name}.{ext}"
+            filename = f"{playlist_name.replace("/", "-")}.{ext}"
             out_path = os.path.join(out_dir, filename)
 
             # Si existe, no machacar sin querer: añade sufijo incremental
@@ -209,6 +211,19 @@ class SpotifyToTidalMigrator:
     # ------------------------
     def migrate_playlist(self, playlist_id: str, playlist_name: str) -> None:
         print(f"\n==== Migrando: {playlist_name} ====")
+        pl_exit = self.tidal.check_playlist(
+            title=playlist_name, description="Migrated from Spotify"
+        )
+        if pl_exit:
+            print(f"La playlist {playlist_name} ya existe. Elige la siguente accion")
+            if PASAR_CANCIONES == "a":
+                return None
+            action = prompt(
+                    "Acción (A=Añadir playlist, S=salta)",
+                    "S",
+                ).lower()
+            if action == "s":
+                return None
         tracks = self.spot.get_playlist_tracks(playlist_id)
         if not tracks:
             print("(vacía)\n")
@@ -310,6 +325,8 @@ class SpotifyToTidalMigrator:
 
             # 's' u otra cosa → saltar
             print("  → omitido.")
+            self._log_skipped_track(base, playlist_name, log_path= Path("blob", "skipped_tracks.txt"))
+
 
         # Enviar manuales en un único lote
         if pending_manual_ids:
@@ -321,6 +338,20 @@ class SpotifyToTidalMigrator:
             inserted += len(pending_manual_ids)
 
         print(f"\nHecho. Insertados: {inserted} / {len(plan)} en '{playlist_name}'.\n")
+
+    def _log_skipped_track(self, base: str, playlist_name: str, log_path: Path) -> None:
+        """
+        Registra en un .txt la pista omitida manualmente (acción 's' u otra no reconocida).
+        Formato: [YYYY-mm-dd HH:MM:SS] <playlist_name> | <base>
+        """
+        try:
+            log_path.parent.mkdir(parents=True, exist_ok=True)
+            with log_path.open("a", encoding="utf-8") as f:
+                f.write(f"{playlist_name} | {base}\n")
+        except Exception as e:
+            # No interrumpir el flujo por un fallo de escritura
+            print(f"(aviso) No se pudo escribir el log de omitidos: {e}")
+
 
     def migrate_liked_songs(self) -> None:
         """
@@ -433,6 +464,8 @@ class SpotifyToTidalMigrator:
         """Devuelve candidatos formateados de TIDAL (id, title, artists, _score)."""
         items = self.tidal.search_tracks_with_scores(track=track, artist=artist, limit=limit)
         out: List[Dict[str, Any]] = []
+        if not items:
+            return out
         for it in items:
             out.append({
                 "id": it.get("id"),

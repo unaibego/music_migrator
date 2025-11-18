@@ -46,6 +46,7 @@ class TidalLibrary:
         if not query:
             parts = [p for p in [track, artist] if p]
             if not parts:
+                return None
                 raise ValueError("Proporciona 'query' o al menos 'track'/'artist'.")
             query = " - ".join(parts)
         return self.client.search_tracks(query, limit=limit, offset=offset)
@@ -167,6 +168,8 @@ class TidalLibrary:
     ) -> List[Dict[str, Any]]:
         """Como search_tracks pero añade `_score` y ordena de mayor a menor."""
         items = self.search_tracks(query=query, track=track, artist=artist, limit=limit, offset=offset)
+        if not items:
+            return None
         base_track = track or (query or "")
         for it in items:
             it["_score"] = self.score_candidate(base_track, artist, it)
@@ -225,6 +228,19 @@ class TidalLibrary:
             if (p.get("title") or "").strip().lower() == title_norm:
                 return p.get("p", None)
         return self.create_playlist(title, description)
+    
+    def check_playlist(self, title: str, description: str = "") -> Dict[str, Any]:
+        """
+        Busca por nombre exacto entre playlists del usuario;
+        ahora usa `list_all_user_playlists()` en lugar de paginar manualmente.
+        """
+        playlists = self.client.list_all_user_playlists()
+        title_norm = title.strip().lower()
+        for p in playlists:
+            if (p.get("title") or "").strip().lower() == title_norm:
+                return True
+        return False
+            
 
     def list_playlist_track_ids(self, pl) -> List[int]:
         """

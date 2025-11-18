@@ -5,3 +5,10 @@
 .env
 
 
+blob
+
+.spotify_token*
+
+.tidal_oauth*
+
+__pycache__

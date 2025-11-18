@@ -200,6 +200,7 @@ class SpotifyUserClient:
             "scope": self.scope,
             "code_challenge_method": "S256",
             "code_challenge": self._code_challenge(self._code_verifier),
+            "show_dialog": True,
             # opcional: state
         }
         return f"{SPOTIFY_AUTH_URL}?{urllib.parse.urlencode(params)}"

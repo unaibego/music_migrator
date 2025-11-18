@@ -37,7 +37,7 @@ tidal_lib = TidalLibrary(tidal)
 client = SpotifyUserClient(
         client_id=spotify_settings.client_id,
         redirect_uri="http://127.0.0.1:8080/callback",  # o el que tengas en el Dashboard
-        scope="user-read-email user-read-private playlist-read-private playlist-read-collaborative user-library-read playlist-read-private",
+        scope="user-read-email user-read-private  playlist-read-collaborative user-library-read playlist-read-private",
     )
 client.authenticate()
 
@@ -63,6 +63,6 @@ migrator = SpotifyToTidalMigrator(
     avoid_duplicates=True,
 )
 migrator.run()
-# migrator.migrate_liked_songs()
+migrator.migrate_liked_songs()
 
 

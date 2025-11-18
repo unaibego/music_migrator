@@ -221,6 +221,8 @@ class TidalUserClient:
         """Crea una playlist en la cuenta del usuario."""
         self._ensure_logged()
         user = self.session.user
+        if title == "":
+            title = "Titulo barik"
         pl = user.create_playlist(title, description)  # devuelve tidalapi.playlist.Playlist
         return pl
 
@@ -244,7 +246,7 @@ class TidalUserClient:
 
 
         # Enviar en lotes por seguridad (p.ej., 100 por petición)
-        BATCH_SIZE = 100
+        BATCH_SIZE = 50
         for i in range(0, len(norm_ids), BATCH_SIZE):
             chunk = norm_ids[i:i + BATCH_SIZE]
             try:
