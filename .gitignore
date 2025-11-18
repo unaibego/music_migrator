@@ -11,4 +11,8 @@ blob
 
 .tidal_oauth*
 
+
+.youtube_token*
+
+
 __pycache__

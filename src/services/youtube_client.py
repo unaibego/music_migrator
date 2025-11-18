@@ -96,7 +96,7 @@ class YouTubeMusicUserClient:
     # 1) __init__: añade client_secret opcional
     def __init__(self, client_id: str, redirect_uri: str = "http://127.0.0.1:8080/google_callback",
                 scope: str = "https://www.googleapis.com/auth/youtube.readonly",
-                token_path: str = "",
+                token_path: str = ".youtube_token.json",
                 client_secret: Optional[str] = None):
         self.client_id = client_id
         self.client_secret = client_secret
