@@ -1,4 +1,3 @@
-from src.services.music_transfer import SpotifyToYouTubeMigrator
 from src.services.spotify_getter import SpotifyUserClient
 from src.services.spotify_library import SpotifyLibrary
 from src.services.tidal_client import TidalUserClient
