@@ -11,6 +11,9 @@ blob
 
 .tidal_oauth*
 
+.tidal_token*
+
+tokens*
 
 .youtube_token*
 

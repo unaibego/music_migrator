@@ -34,9 +34,10 @@ import tidalapi
 
 
 class TidalUserClient:
-    def __init__(self, token_path: str = ".tidal_oauth.json") -> None:
-        self.token_path = token_path
+    def __init__(self, user_name : str = "Unai", token_base_name: str = "tidal_token", token_dir_path: str = "tokens") -> None:
+        self.token_path = f"{token_dir_path}/{token_base_name}_{user_name}.json"
         self.session = tidalapi.Session()
+        self.user_name = user_name
 
     # ------------------------
     # Autenticación
@@ -52,7 +53,7 @@ class TidalUserClient:
             return
 
         # 2) Device login (acepta bool/dict/None según versión)
-        print("Iniciando login de TIDAL (OAuth device) ...")
+        print(f"Iniciando login de {self.user_name} en TIDAL (OAuth device) ...")
         ok = self._device_login()
         if not ok and not self._is_logged():
             raise RuntimeError("No se pudo iniciar sesión en TIDAL.")
@@ -491,7 +492,7 @@ class TidalUserClient:
         # Algunas versiones exponen 'load_oauth_session'
         if hasattr(self.session, "load_oauth_session"):
             try:
-                ok = self.session.load_oauth_session(data)
+                ok = self.session.load_oauth_session(**data)
                 if ok:
                     return True
             except Exception:
@@ -518,7 +519,7 @@ class TidalUserClient:
 
         # Si no, serializamos los campos más comunes si existen
         if not payload:
-            for attr in ("token_type", "access_token", "refresh_token", "expires_in", "expiry_time", "user_id"):
+            for attr in ("token_type", "access_token", "refresh_token", "user_id"):
                 if hasattr(self.session, attr):
                     payload[attr] = getattr(self.session, attr)
 

@@ -1,5 +1,3 @@
-from src.services.youtube_client import YouTubeMusicUserClient
-from src.services.youtube_library import YouTubeMusicLibrary
 from src.services.music_transfer import SpotifyToYouTubeMigrator
 from src.services.spotify_getter import SpotifyUserClient
 from src.services.spotify_library import SpotifyLibrary
@@ -28,7 +26,7 @@ spotify_settings = get_spotify_settings()
 
 # 1) Buscar mejor coincidencia para un tema
 
-tidal = TidalUserClient()
+tidal = TidalUserClient("Maialen")
 tidal.authenticate()
 
     # 2) Capa de biblioteca
@@ -38,6 +36,7 @@ client = SpotifyUserClient(
         client_id=spotify_settings.client_id,
         redirect_uri="http://127.0.0.1:8080/callback",  # o el que tengas en el Dashboard
         scope="user-read-email user-read-private  playlist-read-collaborative user-library-read playlist-read-private",
+        user_name="Maialen"
     )
 client.authenticate()
 

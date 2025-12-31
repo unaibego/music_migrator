@@ -150,10 +150,7 @@ class SpotifyToTidalMigrator:
             pid = p.get("id")
             count = p.get("tracks_total")
             if self.ask_per_playlist:
-                if not PASAR_CANCIONES:
-                    ok = prompt_yn(f"¿Migrar la playlist '{name}' ({count} pistas)?", default_yes=True)
-                else:
-                    ok = True
+                ok = prompt_yn(f"¿Migrar la playlist '{name}' ({count} pistas)?", default_yes=True)
                 if not ok:
                     continue
             self.migrate_playlist(playlist_id=pid, playlist_name=name)

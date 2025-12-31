@@ -109,12 +109,13 @@ class SpotifyUserClient:
         client_id: str,
         redirect_uri: str = "http://localhost:8080/callback",
         scope: str = "user-read-email user-read-private",
-        token_path: str = ".spotify_token.json",
+        user_name : str = "Unai", token_base_name: str = "spotify_token", token_dir_path: str = "tokens"
     ) -> None:
         self.client_id = client_id
         self.redirect_uri = redirect_uri
         self.scope = scope
-        self.token_path = token_path
+        self.token_path = f"{token_dir_path}/{token_base_name}_{user_name}.json"
+        self.user_name = user_name
 
         self._code_verifier: Optional[str] = None
         self._token: Optional[Token] = None

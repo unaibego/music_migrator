@@ -365,6 +365,34 @@ class TidalLibrary:
                     ids.append(int(tid))
         self.add_tracks_by_ids(pl, ids, avoid_duplicates=avoid_duplicates)
         return len(ids)
+    
+    def list_user_playlists(self) -> List[Dict[str, Any]]:
+        """
+        Devuelve la lista de playlists del usuario tal como la entrega
+        `TidalUserClient.list_all_user_playlists()`.
+
+        Cada item suele tener al menos:
+          - "title": nombre visible de la playlist
+          - "p": objeto playlist que entiende el cliente para operaciones
+                 como list_all_playlist_tracks / add_tracks_to_playlist
+        """
+        return self.client.list_all_user_playlists()
+    
+
+    def get_playlist_by_title(self, title: str) -> Optional[Any]:
+        """
+        Devuelve el objeto playlist (el mismo tipo que devuelve create_playlist)
+        cuyo título coincide exactamente (ignorando mayúsculas/minúsculas).
+        Si no existe, devuelve None (NO crea nada).
+        """
+        playlists = self.list_user_playlists()
+        title_norm = (title or "").strip().lower()
+        for p in playlists:
+            if (p.get("title") or "").strip().lower() == title_norm:
+                # Igual que en get_or_create_playlist, el objeto real va en "p"
+                pl_obj = p.get("p")
+                return pl_obj if pl_obj is not None else p
+        return None
 
 
 if __name__ == "__main__":

@@ -25,6 +25,16 @@
             "justMyCode": true
         },
         {
+            "name": "Synchronizer",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "src.sincronize_playlist",
+            "cwd": "${workspaceFolder}",
+            "envFile": "${workspaceFolder}/.env",
+            "console": "integratedTerminal",
+            "justMyCode": true
+        },
+        {
             "name": " Youtube Authenticator",
             "type": "debugpy",
             "request": "launch",
