@@ -53,6 +53,16 @@
             "envFile": "${workspaceFolder}/.env",
             "console": "integratedTerminal",
             "justMyCode": true
+        },
+        {
+            "name": "Blob handler",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "src.db.blob_handler",
+            "cwd": "${workspaceFolder}",
+            "envFile": "${workspaceFolder}/.env",
+            "console": "integratedTerminal",
+            "justMyCode": true
         }
     ]
 }

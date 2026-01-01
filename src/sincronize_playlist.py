@@ -28,7 +28,7 @@ sync = TidalPlaylistsSynchronizer(
         tidal_a=tidal_lib_unai,
         tidal_b=tidal_lib_june,
         avoid_duplicates=True,
-        ask_per_playlist=True,
+        ask_per_playlist=False,
     )
 
 sync.run()

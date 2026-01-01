@@ -12,17 +12,6 @@ from src.core.settings.spotify_service import get_spotify_settings
 youtube_settings = get_youtube_settings()
 spotify_settings = get_spotify_settings()
 
-
-# client = YouTubeMusicUserClient(
-#     client_id=youtube_settings.client_id,
-#     client_secret=youtube_settings.client_secret,
-#     # ¡OJO! Para crear/editar playlists usa el scope amplio:
-#     scope="https://www.googleapis.com/auth/youtube"
-# )
-# client.authenticate()
-
-# youtube_lib = YouTubeMusicLibrary(client)
-
 # 1) Buscar mejor coincidencia para un tema
 
 tidal = TidalUserClient("Maialen")

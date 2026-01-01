@@ -28,16 +28,22 @@ from __future__ import annotations
 import json
 import os
 import base64
+import tidalapi
+from tidalapi import Session
 from typing import Any, Dict, List, Iterable
 
-import tidalapi
+from src.db.blob_handler import BlobHandler
 
 
 class TidalUserClient:
-    def __init__(self, user_name : str = "Unai", token_base_name: str = "tidal_token", token_dir_path: str = "tokens") -> None:
-        self.token_path = f"{token_dir_path}/{token_base_name}_{user_name}.json"
+    session : Session
+    user_name : str
+    blob_handler : BlobHandler
+
+    def __init__(self, user_name : str = "Unai") -> None:
         self.session = tidalapi.Session()
         self.user_name = user_name
+        self.blob_handler = BlobHandler()
 
     # ------------------------
     # Autenticación
@@ -60,6 +66,7 @@ class TidalUserClient:
 
         # 3) Guardar sesión si es posible
         self._save_oauth_if_possible()
+
 
     def list_all_user_playlists(self) -> List[Dict[str, Any]]:
         """Devuelve TODAS las playlists del usuario (internamente puede paginar)."""
@@ -481,13 +488,8 @@ class TidalUserClient:
 
     def _load_oauth_if_possible(self) -> bool:
         """Carga sesión OAuth desde disco si la versión de tidalapi lo soporta."""
-        if not os.path.exists(self.token_path):
-            return False
-        try:
-            with open(self.token_path, "r", encoding="utf-8") as f:
-                data = json.load(f)
-        except Exception:
-            return False
+        
+        data = self.blob_handler.get_tidal_tokens(user_name=self.user_name)
 
         # Algunas versiones exponen 'load_oauth_session'
         if hasattr(self.session, "load_oauth_session"):
@@ -527,11 +529,12 @@ class TidalUserClient:
             # No pasa nada; iniciarás login la próxima vez.
             return
 
-        try:
-            with open(self.token_path, "w", encoding="utf-8") as f:
-                json.dump(payload, f, indent=2, ensure_ascii=False)
-        except Exception:
-            pass
+
+    
+        
+        self.blob_handler.put_tidal_token_dict(self.user_name, payload)
+            
+    
 
 
 # ------------------------
