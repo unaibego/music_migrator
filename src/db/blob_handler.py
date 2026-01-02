@@ -31,8 +31,8 @@ class BlobHandler():
             body = response["Body"].read()
             return json.loads(body)
         except Exception as e:
-
-            raise Exception(f"El nombre de usuario no es el correcto") from e
+            raise e
+            raise ValueError(f"El nombre de usuario no es el correcto")
         
 
     def put_tidal_token_dict(self, user_name : str, token_dict: dict):
