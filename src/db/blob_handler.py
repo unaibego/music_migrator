@@ -1,4 +1,5 @@
 import json
+import os
 import boto3
 from typing import Any
 
@@ -15,7 +16,11 @@ class BlobHandler():
     s3 : Any
 
     def __init__(self):
-        session = boto3.Session(profile_name="dev")
+        profile = aws_settings.profile  
+        if profile:
+            session = boto3.Session(profile_name=profile)
+        else:
+            session = boto3.Session()  # en Lambda usará el role automáticamente
         self.s3 = session.client("s3")
         self.bucket_name = aws_settings.bucket_name
 

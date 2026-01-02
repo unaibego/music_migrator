@@ -5,9 +5,8 @@ class AWSSettings(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="AWS_")
     
     bucket_name: str = ""
-    client_id : str = ""
-    client_secret : str = ""
-    key: str  = ""
+    profile : str | None = None
+
 
 
 def get_aws_settings():
