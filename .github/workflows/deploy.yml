@@ -1,0 +1,46 @@
+name: Deploy Lambda (Container)
+
+on:
+  push:
+    branches: [ "main" ]
+
+permissions:
+  id-token: write   # necesario para OIDC
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build, tag, and push image to ECR
+        env:
+          ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
+        run: |
+          IMAGE_TAG=${GITHUB_SHA}
+          ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+          REGION=${{ secrets.AWS_REGION }}
+          ECR_URI=${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com
+
+          docker build -t ${ECR_URI}/${ECR_REPOSITORY}:${IMAGE_TAG} .
+          docker push ${ECR_URI}/${ECR_REPOSITORY}:${IMAGE_TAG}
+
+          echo "IMAGE_URI=${ECR_URI}/${ECR_REPOSITORY}:${IMAGE_TAG}" >> $GITHUB_ENV
+
+      - name: Update Lambda to new image
+        uses: aws-actions/aws-lambda-deploy@v1
+        with:
+          function-name: ${{ secrets.LAMBDA_FUNCTION_NAME }}
+          image-uri: ${{ env.IMAGE_URI }}

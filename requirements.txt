@@ -1,4 +1,24 @@
 pydantic == 2.4.2
 pydantic_settings == 2.0.3
-requests==2.31.0
+urllib3==2.0.0
+annotated-types==0.7.0
+boto3==1.42.19
+certifi==2025.10.5
+charset-normalizer==3.4.4
+git-filter-repo==2.47.0
+idna==3.11
+isodate==0.7.2
+jmespath==1.0.1
+mpegdash==0.4.0
+pyaes==1.6.1
+pydantic-settings==2.0.3
+pydantic_core==2.10.1
+python-dateutil==2.9.0.post0
+python-dotenv==1.1.1
+ratelimit==2.2.1
+requests==2.32.5
+s3transfer==0.16.0
+six==1.17.0
+tidalapi==0.8.8
+typing_extensions==4.15.0
 urllib3==2.0.0

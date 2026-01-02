@@ -1,0 +1,7 @@
+services:
+  tidal-sync:
+    build: .
+    env_file:
+      - .env
+    ports:
+      - "9000:8080"

@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Optional, Set, Tuple
 from .tidal_library import TidalLibrary
 # Reutilizamos los mismos helpers interactivos del migrador.
 # Si están en otro módulo, ajusta el import.
-from utils.utils import prompt, prompt_yn  # o desde donde los tengas
+from src.utils.utils import prompt, prompt_yn  # o desde donde los tengas
 
 
 class TidalPlaylistsSynchronizer:
