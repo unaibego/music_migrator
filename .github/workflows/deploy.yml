@@ -40,7 +40,17 @@ jobs:
           echo "IMAGE_URI=${ECR_URI}/${ECR_REPOSITORY}:${IMAGE_TAG}" >> $GITHUB_ENV
 
       - name: Update Lambda to new image
-        uses: aws-actions/aws-lambda-deploy@v1
-        with:
-          function-name: ${{ secrets.LAMBDA_FUNCTION_NAME }}
-          image-uri: ${{ env.IMAGE_URI }}
+        env:
+          ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
+          LAMBDA_FUNCTION_NAME: ${{ secrets.LAMBDA_FUNCTION_NAME }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+        run: |
+          IMAGE_TAG=${GITHUB_SHA}
+          ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+          ECR_URI=${ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com
+          IMAGE_URI=${ECR_URI}/${ECR_REPOSITORY}:${IMAGE_TAG}
+
+          aws lambda update-function-code \
+            --function-name "${LAMBDA_FUNCTION_NAME}" \
+            --image-uri "${IMAGE_URI}"
+
