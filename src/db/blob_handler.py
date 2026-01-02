@@ -30,8 +30,9 @@ class BlobHandler():
             response = self.s3.get_object(Bucket=self.bucket_name, Key=orig_path)
             body = response["Body"].read()
             return json.loads(body)
-        except:
-            raise Exception("El nombre de usuario no es el correcto")
+        except Exception as e:
+
+            raise Exception(f"El nombre de usuario no es el correcto") from e
         
 
     def put_tidal_token_dict(self, user_name : str, token_dict: dict):
