@@ -3,315 +3,490 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Music Control</title>
-  <meta name="description" content="Panel para sincronizar playlists y ver canciones añadidas." />
+  <title>Driving with my lova</title>
+  <meta name="description" content="Playlist compartida — sync Tidal" />
   <style>
-    :root{
-      --bg1:#070712;
-      --bg2:#0b1026;
-      --glass: rgba(255,255,255,.08);
-      --txt: rgba(255,255,255,.92);
-      --muted: rgba(255,255,255,.68);
-      --ok: rgba(120,255,180,.95);
-      --warn: rgba(255,220,120,.95);
-      --bad: rgba(255,120,140,.95);
-      --shadow: 0 18px 55px rgba(0,0,0,.55);
-      --ring: 0 0 0 10px rgba(255,255,255,.06);
-      --unai: rgba(170, 90, 255, .35);
-      --june: rgba(0, 220, 255, .28);
+    :root {
+      --bg-base: #121212;
+      --bg-elevated: #181818;
+      --bg-highlight: #282828;
+      --bg-hover: rgba(255,255,255,.08);
+      --text-base: #ffffff;
+      --text-subdued: #b3b3b3;
+      --text-muted: #6a6a6a;
+      --accent: #1db954;
+      --accent-hover: #1ed760;
+      --accent-dim: rgba(29,185,84,.15);
+      --header-gradient: linear-gradient(180deg, #1a4d32 0%, #121212 420px);
+      --unai: #8b5cf6;
+      --june: #38bdf8;
+      --border: rgba(255,255,255,.08);
+      --radius: 8px;
     }
 
-    *{ box-sizing:border-box; }
-    html,body{ min-height:100%; }
-    body{
-      margin:0;
-      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
-      color:var(--txt);
-      background:
-        radial-gradient(1200px 900px at 20% 25%, rgba(170, 90, 255, .25), transparent 55%),
-        radial-gradient(900px 700px at 80% 35%, rgba(0, 220, 255, .18), transparent 55%),
-        radial-gradient(1000px 800px at 50% 80%, rgba(0, 255, 170, .12), transparent 55%),
-        linear-gradient(160deg, var(--bg1), var(--bg2));
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      min-height: 100%;
+      background: var(--bg-base);
+      color: var(--text-base);
+      font-family: "Circular Spotify", "Helvetica Neue", Helvetica, Arial, sans-serif;
+      -webkit-font-smoothing: antialiased;
     }
 
-    .wave, .wave2{
-      position:fixed;
-      pointer-events:none;
-      filter: blur(18px);
-      opacity:.45;
-      z-index:0;
-    }
-    .wave{
-      inset:-30vh -20vw auto -20vw;
-      height:70vh;
-      transform: rotate(-8deg);
-      background:
-        radial-gradient(closest-side, rgba(255,255,255,.06), transparent 65%),
-        repeating-linear-gradient(90deg, rgba(255,255,255,.08) 0 2px, transparent 2px 18px);
-    }
-    .wave2{
-      inset:auto -30vw -35vh -30vw;
-      height:80vh;
-      transform: rotate(10deg);
-      background:
-        radial-gradient(closest-side, rgba(255,255,255,.05), transparent 70%),
-        repeating-linear-gradient(90deg, rgba(255,255,255,.07) 0 2px, transparent 2px 16px);
+    .app {
+      min-height: 100vh;
+      background: var(--header-gradient);
     }
 
-    .wrap{
-      position:relative;
-      z-index:1;
-      min-height:100%;
-      display:flex;
-      justify-content:center;
-      padding:20px 16px 32px;
+    /* ── Hero (playlist header) ── */
+    .hero {
+      display: flex;
+      align-items: flex-end;
+      gap: 24px;
+      padding: 24px 32px 32px;
+      max-width: 1400px;
+      margin: 0 auto;
     }
 
-    .card{
-      width:min(560px, 100%);
-      border-radius:28px;
-      background: linear-gradient(180deg, var(--glass), rgba(255,255,255,.04));
-      border: 1px solid rgba(255,255,255,.12);
-      box-shadow: var(--shadow);
-      padding:24px 20px 18px;
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
+    .cover {
+      width: clamp(120px, 22vw, 232px);
+      height: clamp(120px, 22vw, 232px);
+      border-radius: 4px;
+      background: linear-gradient(135deg, #1db954 0%, #191414 60%, #535353 100%);
+      box-shadow: 0 4px 60px rgba(0,0,0,.5);
+      display: grid;
+      place-items: center;
+      flex-shrink: 0;
+    }
+    .cover svg { opacity: .9; }
+
+    .hero-meta { min-width: 0; padding-bottom: 8px; }
+    .hero-type {
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+    .hero-title {
+      font-size: clamp(2rem, 6vw, 4.5rem);
+      font-weight: 900;
+      line-height: 1.05;
+      letter-spacing: -.04em;
+      word-break: break-word;
+    }
+    .hero-desc {
+      margin-top: 12px;
+      color: var(--text-subdued);
+      font-size: 14px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 6px;
+    }
+    .hero-desc strong { color: var(--text-base); }
+    .dot-sep { color: var(--text-muted); }
+
+    /* ── Toolbar ── */
+    .toolbar {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 16px 32px;
+      max-width: 1400px;
+      margin: 0 auto;
+      flex-wrap: wrap;
     }
 
-    .top{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:14px;
-      margin-bottom:16px;
+    .btn-icon {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      border: none;
+      background: var(--accent);
+      color: #000;
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+      transition: transform .15s, background .15s;
+      flex-shrink: 0;
     }
-    .brand{ display:flex; align-items:center; gap:12px; min-width:0; }
-    .logo{
-      width:38px; height:38px;
-      border-radius:14px;
-      background: radial-gradient(circle at 30% 30%, rgba(255,255,255,.25), rgba(255,255,255,.08));
-      border:1px solid rgba(255,255,255,.16);
-      display:grid;
-      place-items:center;
+    .btn-icon:hover { background: var(--accent-hover); transform: scale(1.04); }
+    .btn-icon:active { transform: scale(.96); }
+    .btn-icon[disabled] { opacity: .5; cursor: not-allowed; transform: none; }
+    .btn-icon.secondary {
+      width: 40px;
+      height: 40px;
+      background: transparent;
+      color: var(--text-subdued);
     }
-    .title b{
-      font-size:14px;
-      letter-spacing:.10em;
-      text-transform:uppercase;
-    }
-    .title span{
-      display:block;
-      font-size:12px;
-      color:var(--muted);
-      margin-top:2px;
-    }
-
-    .chip{
-      font-size:12px;
-      color: rgba(255,255,255,.78);
-      background: rgba(255,255,255,.06);
-      border:1px solid rgba(255,255,255,.12);
-      padding:8px 10px;
-      border-radius:999px;
-      display:flex;
-      align-items:center;
-      gap:8px;
-      white-space:nowrap;
-    }
-    .dot{
-      width:8px; height:8px;
-      border-radius:50%;
-      background: rgba(255,255,255,.35);
-      box-shadow: 0 0 0 6px rgba(255,255,255,.05);
+    .btn-icon.secondary:hover {
+      background: var(--bg-hover);
+      color: var(--text-base);
+      transform: none;
     }
 
-    .actions{
-      display:grid;
-      gap:10px;
-      margin-bottom:14px;
+    .toolbar-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-left: auto;
     }
 
-    .btn{
-      width:100%;
-      min-height:56px;
-      border-radius:999px;
-      border:1px solid rgba(255,255,255,.18);
-      background:
-        radial-gradient(120px 120px at 30% 25%, rgba(255,255,255,.25), transparent 55%),
-        linear-gradient(135deg, rgba(170, 90, 255, .35), rgba(0, 220, 255, .22), rgba(0, 255, 170, .18));
-      box-shadow: var(--shadow), var(--ring);
-      color:var(--txt);
-      font-weight:700;
-      font-size:15px;
-      cursor:pointer;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      gap:10px;
-      transition: transform .12s ease, opacity .12s ease;
+    .btn-text {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-base);
+      padding: 8px 16px;
+      border-radius: 500px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background .15s, border-color .15s;
     }
-    .btn:active{ transform: scale(.98); }
-    .btn[disabled]{ cursor:not-allowed; opacity:.75; }
-    .btn.secondary{
-      min-height:44px;
-      font-size:13px;
-      font-weight:600;
-      background: rgba(255,255,255,.06);
-      box-shadow:none;
+    .btn-text:hover { background: var(--bg-hover); border-color: rgba(255,255,255,.2); }
+    .btn-text[disabled] { opacity: .45; cursor: not-allowed; }
+
+    .status-pill {
+      font-size: 12px;
+      color: var(--text-subdued);
+      padding: 6px 12px;
+      border-radius: 500px;
+      background: var(--bg-highlight);
+      max-width: 280px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .status-pill.ok { color: var(--accent); background: var(--accent-dim); }
+    .status-pill.warn { color: #fbbf24; background: rgba(251,191,36,.12); }
+    .status-pill.bad { color: #f87171; background: rgba(248,113,113,.12); }
+
+    /* ── Search & filters ── */
+    .controls {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 0 32px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
     }
 
-    .status{
-      padding:12px 14px;
-      border-radius:16px;
-      background: rgba(0,0,0,.18);
-      border: 1px solid rgba(255,255,255,.10);
-      color:var(--muted);
-      font-size:13px;
-      line-height:1.4;
-      margin-bottom:18px;
+    .search-wrap {
+      position: relative;
+      max-width: 364px;
     }
-    .status.ok{ color: rgba(220,255,235,.9); border-color: rgba(120,255,180,.25); }
-    .status.warn{ color: rgba(255,245,220,.9); border-color: rgba(255,220,120,.25); }
-    .status.bad{ color: rgba(255,225,230,.92); border-color: rgba(255,120,140,.22); }
+    .search-wrap svg {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+      pointer-events: none;
+    }
+    .search-input {
+      width: 100%;
+      padding: 10px 12px 10px 40px;
+      border-radius: 500px;
+      border: none;
+      background: var(--bg-highlight);
+      color: var(--text-base);
+      font-size: 14px;
+      outline: none;
+      transition: background .15s;
+    }
+    .search-input::placeholder { color: var(--text-muted); }
+    .search-input:focus { background: #333; }
 
-    .section-head{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:10px;
-      margin-bottom:10px;
+    .filters {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
     }
-    .section-head h2{
-      margin:0;
-      font-size:13px;
-      letter-spacing:.08em;
-      text-transform:uppercase;
-      color:rgba(255,255,255,.82);
+    .filter-chip {
+      padding: 6px 14px;
+      border-radius: 500px;
+      border: none;
+      background: var(--bg-highlight);
+      color: var(--text-subdued);
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background .15s, color .15s;
     }
-    .count-badge{
-      font-size:12px;
-      color:var(--muted);
-      background:rgba(255,255,255,.06);
-      border:1px solid rgba(255,255,255,.10);
-      padding:4px 10px;
-      border-radius:999px;
-    }
+    .filter-chip:hover { background: #333; color: var(--text-base); }
+    .filter-chip.active { background: var(--text-base); color: #000; }
 
-    .song-list{
-      display:grid;
-      gap:10px;
-      max-height:min(52vh, 520px);
-      overflow:auto;
-      padding-right:2px;
-    }
-    .song-list.empty{
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      min-height:120px;
-      color:var(--muted);
-      font-size:13px;
-      text-align:center;
-      border:1px dashed rgba(255,255,255,.12);
-      border-radius:18px;
-      background:rgba(0,0,0,.12);
+    .results-info {
+      font-size: 13px;
+      color: var(--text-muted);
+      padding: 0 32px 8px;
+      max-width: 1400px;
+      margin: 0 auto;
     }
 
-    .song{
-      display:grid;
-      grid-template-columns:1fr auto;
-      gap:8px 12px;
-      padding:14px;
-      border-radius:18px;
-      background:rgba(0,0,0,.18);
-      border:1px solid rgba(255,255,255,.08);
+    /* ── Track table ── */
+    .track-panel {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 0 32px 48px;
     }
-    .song-title{
-      font-size:14px;
-      font-weight:700;
-      line-height:1.3;
-      margin:0;
-    }
-    .song-artist{
-      font-size:12px;
-      color:var(--muted);
-      margin:4px 0 0;
-    }
-    .song-meta{
-      grid-column:1 / -1;
-      display:flex;
-      flex-wrap:wrap;
-      gap:8px;
-      align-items:center;
-      font-size:11px;
-      color:rgba(255,255,255,.55);
-    }
-    .user-badge{
-      padding:4px 10px;
-      border-radius:999px;
-      font-size:11px;
-      font-weight:700;
-      letter-spacing:.03em;
-      border:1px solid rgba(255,255,255,.14);
-      white-space:nowrap;
-      align-self:start;
-    }
-    .user-badge.unai{ background:var(--unai); }
-    .user-badge.june{ background:var(--june); }
-    .user-badge.other{ background:rgba(255,255,255,.08); }
 
-    .footer{
-      margin-top:14px;
-      font-size:12px;
-      color:rgba(255,255,255,.55);
+    .track-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .track-table thead th {
+      text-align: left;
+      font-size: 12px;
+      font-weight: 400;
+      color: var(--text-muted);
+      padding: 8px 16px 8px 0;
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      background: var(--bg-base);
+      z-index: 2;
+    }
+    .track-table thead th:first-child { padding-left: 0; width: 40px; text-align: center; }
+    .track-table thead th.col-owner { width: 140px; }
+    .track-table thead th.col-date { width: 120px; }
+    .track-table thead th.col-action { width: 200px; }
+    .track-table thead th.col-delete { width: 48px; }
+
+    .track-row {
+      border-radius: 4px;
+      transition: background .12s;
+    }
+    .track-row:hover { background: var(--bg-hover); }
+    .track-row td {
+      padding: 8px 16px 8px 0;
+      vertical-align: middle;
+      font-size: 14px;
+      border-bottom: 1px solid rgba(255,255,255,.04);
+    }
+    .track-row td:first-child {
+      padding-left: 0;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 14px;
+    }
+    .track-row:hover td:first-child { color: transparent; }
+    .track-row .play-hint {
+      display: none;
+      color: var(--text-base);
+    }
+    .track-row:hover .play-hint { display: inline; }
+    .track-row:hover .idx-num { display: none; }
+
+    .track-main { min-width: 0; }
+    .track-title {
+      font-size: 15px;
+      color: var(--text-base);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .track-artist {
+      font-size: 13px;
+      color: var(--text-subdued);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-top: 2px;
+    }
+
+    .owner-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      color: var(--text-subdued);
+    }
+    .owner-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .owner-dot.unai { background: var(--unai); }
+    .owner-dot.june { background: var(--june); }
+    .owner-dot.none { background: var(--text-muted); }
+
+    .col-date { color: var(--text-muted); font-size: 13px; }
+
+    .row-action {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .row-action select {
+      flex: 1;
+      min-width: 0;
+      padding: 6px 8px;
+      border-radius: 4px;
+      border: none;
+      background: var(--bg-highlight);
+      color: var(--text-base);
+      font-size: 12px;
+      cursor: pointer;
+      opacity: 0;
+      transition: opacity .12s;
+    }
+    .track-row:hover .row-action select,
+    .track-row:focus-within .row-action select { opacity: 1; }
+
+    .btn-save-row {
+      padding: 6px 12px;
+      border: none;
+      border-radius: 500px;
+      background: var(--text-base);
+      color: #000;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      opacity: 0;
+      transition: opacity .12s, transform .1s;
+      white-space: nowrap;
+    }
+    .track-row:hover .btn-save-row,
+    .track-row:focus-within .btn-save-row { opacity: 1; }
+    .btn-save-row:hover { transform: scale(1.05); }
+    .btn-save-row[disabled] { opacity: .4 !important; cursor: not-allowed; }
+
+    .btn-delete-row {
+      width: 32px;
+      height: 32px;
+      border: none;
+      border-radius: 4px;
+      background: transparent;
+      color: var(--text-muted);
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+      opacity: 0;
+      transition: opacity .12s, color .12s, background .12s;
+      flex-shrink: 0;
+    }
+    .btn-delete-row:hover {
+      color: #f87171;
+      background: rgba(248,113,113,.12);
+    }
+    .track-row:hover .btn-delete-row,
+    .track-row:focus-within .btn-delete-row { opacity: 1; }
+    .btn-delete-row[disabled] { opacity: .35 !important; cursor: not-allowed; }
+
+    .empty-state {
+      text-align: center;
+      padding: 64px 24px;
+      color: var(--text-subdued);
+    }
+    .empty-state h3 {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--text-base);
+      margin-bottom: 8px;
+    }
+
+    /* ── Mobile cards ── */
+    @media (max-width: 768px) {
+      .hero { padding: 20px 16px 24px; gap: 16px; }
+      .toolbar, .controls, .track-panel, .results-info { padding-left: 16px; padding-right: 16px; }
+      .toolbar-actions { margin-left: 0; width: 100%; }
+      .search-wrap { max-width: 100%; }
+
+      .track-table thead { display: none; }
+      .track-table, .track-table tbody, .track-row, .track-row td {
+        display: block;
+        width: 100%;
+      }
+      .track-row {
+        padding: 12px 0;
+        border-bottom: 1px solid var(--border);
+      }
+      .track-row td {
+        padding: 2px 0;
+        border: none;
+      }
+      .track-row td:first-child { display: none; }
+      .track-row td.col-date { font-size: 12px; margin-top: 4px; }
+      .row-action select, .btn-save-row, .btn-delete-row { opacity: 1 !important; }
+      .track-row .row-action { margin-top: 10px; }
     }
   </style>
 </head>
-
 <body>
-  <div class="wave"></div>
-  <div class="wave2"></div>
-
-  <div class="wrap">
-    <main class="card" role="main">
-      <div class="top">
-        <div class="brand">
-          <div class="logo" aria-hidden="true">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-              <path d="M9 18V6l12-2v12" stroke="white" stroke-width="2" stroke-linecap="round"/>
-              <circle cx="7" cy="18" r="3" stroke="white" stroke-width="2"/>
-              <circle cx="19" cy="16" r="3" stroke="white" stroke-width="2"/>
-            </svg>
-          </div>
-          <div class="title">
-            <b>Music Control</b>
-            <span>Sincroniza y consulta la playlist</span>
-          </div>
-        </div>
-        <div class="chip">
-          <span class="dot" id="dot"></span>
+  <div class="app">
+    <header class="hero">
+      <div class="cover" aria-hidden="true">
+        <svg width="64" height="64" viewBox="0 0 24 24" fill="white" opacity=".85">
+          <path d="M12 3v10.55A4 4 0 1 0 14 17V7h4V3h-6z"/>
+        </svg>
+      </div>
+      <div class="hero-meta">
+        <p class="hero-type">Playlist</p>
+        <h1 class="hero-title">Driving with my lova</h1>
+        <p class="hero-desc">
+          <strong id="heroCount">—</strong>
+          <span class="dot-sep">·</span>
           <span id="chipText">Listo</span>
-        </div>
+        </p>
       </div>
+    </header>
 
-      <div class="actions">
-        <button id="runBtn" class="btn" type="button">Sincronizar playlist</button>
-        <button id="refreshBtn" class="btn secondary" type="button">Actualizar lista</button>
+    <div class="toolbar">
+      <button id="runBtn" class="btn-icon" type="button" title="Sincronizar playlist">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+      </button>
+      <button id="refreshBtn" class="btn-icon secondary" type="button" title="Actualizar lista">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M23 4v6h-6M1 20v-6h6"/>
+          <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+        </svg>
+      </button>
+      <div class="toolbar-actions">
+        <span id="status" class="status-pill" aria-live="polite">Cargando…</span>
       </div>
+    </div>
 
-      <div id="status" class="status" aria-live="polite">
-        <strong>Estado:</strong> cargando canciones…
+    <div class="controls">
+      <div class="search-wrap">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+        </svg>
+        <input id="searchInput" class="search-input" type="search" placeholder="Buscar canciones o artistas…" autocomplete="off" />
       </div>
-
-      <div class="section-head">
-        <h2>Canciones añadidas</h2>
-        <span id="songCount" class="count-badge">0 canciones</span>
+      <div class="filters" role="group" aria-label="Filtrar por usuario">
+        <button type="button" class="filter-chip active" data-filter="all">Todas</button>
+        <button type="button" class="filter-chip" data-filter="unassigned">Sin asignar</button>
+        <button type="button" class="filter-chip" data-filter="Unai">Unai</button>
+        <button type="button" class="filter-chip" data-filter="June">June</button>
       </div>
+    </div>
 
-      <div id="songList" class="song-list empty">Cargando…</div>
+    <p id="resultsInfo" class="results-info"></p>
 
-      <div class="footer">Las canciones se registran cuando el sync las copia de una cuenta a otra.</div>
-    </main>
+    <section class="track-panel">
+      <table class="track-table" aria-label="Lista de canciones">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Título</th>
+            <th class="col-owner">Añadida por</th>
+            <th class="col-date">Fecha</th>
+            <th class="col-action">Asignar</th>
+            <th class="col-delete" aria-label="Eliminar"></th>
+          </tr>
+        </thead>
+        <tbody id="songList"></tbody>
+      </table>
+      <div id="emptyState" class="empty-state" hidden>
+        <h3>No hay resultados</h3>
+        <p>Prueba otro término de búsqueda o cambia el filtro.</p>
+      </div>
+    </section>
   </div>
 
   <script>
@@ -323,27 +498,24 @@
     const refreshBtn = document.getElementById("refreshBtn");
     const statusEl = document.getElementById("status");
     const songListEl = document.getElementById("songList");
-    const songCountEl = document.getElementById("songCount");
-    const dot = document.getElementById("dot");
+    const emptyStateEl = document.getElementById("emptyState");
+    const heroCountEl = document.getElementById("heroCount");
     const chipText = document.getElementById("chipText");
+    const searchInput = document.getElementById("searchInput");
+    const resultsInfoEl = document.getElementById("resultsInfo");
+    const filterChips = document.querySelectorAll(".filter-chip");
 
-    function setChip(state, text){
-      chipText.textContent = text;
-      const styles = {
-        ok: ["rgba(120,255,180,.9)", "0 0 0 6px rgba(120,255,180,.12)"],
-        run: ["rgba(255,220,120,.9)", "0 0 0 6px rgba(255,220,120,.12)"],
-        bad: ["rgba(255,120,140,.9)", "0 0 0 6px rgba(255,120,140,.12)"],
-        idle: ["rgba(255,255,255,.35)", "0 0 0 6px rgba(255,255,255,.05)"],
-      };
-      const [bg, shadow] = styles[state] || styles.idle;
-      dot.style.background = bg;
-      dot.style.boxShadow = shadow;
+    let allSongs = [];
+    let activeFilter = "all";
+    let searchQuery = "";
+
+    function setStatus(kind, text){
+      statusEl.className = "status-pill" + (kind ? " " + kind : "");
+      statusEl.textContent = text;
     }
 
-    function setStatus(kind, html){
-      statusEl.classList.remove("ok","warn","bad");
-      if(kind) statusEl.classList.add(kind);
-      statusEl.innerHTML = html;
+    function setChip(text){
+      chipText.textContent = text;
     }
 
     function buildHeaders(method){
@@ -357,17 +529,7 @@
       if(!iso) return "—";
       const d = new Date(iso);
       if(Number.isNaN(d.getTime())) return iso;
-      return d.toLocaleString("es-ES", {
-        day:"2-digit", month:"short", year:"numeric",
-        hour:"2-digit", minute:"2-digit"
-      });
-    }
-
-    function userBadgeClass(name){
-      const n = (name || "").toLowerCase();
-      if(n.includes("unai")) return "unai";
-      if(n.includes("june")) return "june";
-      return "other";
+      return d.toLocaleDateString("es-ES", { day:"numeric", month:"short", year:"numeric" });
     }
 
     function escapeHtml(text){
@@ -378,114 +540,249 @@
         .replaceAll('"',"&quot;");
     }
 
-    function renderSongs(songs){
-      songCountEl.textContent = `${songs.length} canción${songs.length === 1 ? "" : "es"}`;
+    function userLabel(name){
+      if(!name) return "Sin asignar";
+      return name;
+    }
 
-      if(!songs.length){
-        songListEl.className = "song-list empty";
-        songListEl.textContent = "Todavía no hay canciones registradas.";
+    function ownerDotClass(name){
+      if(!name) return "none";
+      const n = name.toLowerCase();
+      if(n.includes("unai")) return "unai";
+      if(n.includes("june")) return "june";
+      return "none";
+    }
+
+    function normalize(str){
+      return (str || "").toLowerCase().normalize("NFD").replace(/\p{Diacritic}/gu, "");
+    }
+
+    function filterSongs(songs){
+      let result = songs;
+
+      if(activeFilter === "unassigned"){
+        result = result.filter(s => !s.insertedBy);
+      } else if(activeFilter !== "all"){
+        result = result.filter(s => (s.insertedBy || "") === activeFilter);
+      }
+
+      const q = normalize(searchQuery.trim());
+      if(q){
+        result = result.filter(s => {
+          const haystack = normalize(`${s.title || ""} ${s.artist || ""}`);
+          return haystack.includes(q);
+        });
+      }
+
+      return result;
+    }
+
+    function renderSongs(){
+      const filtered = filterSongs(allSongs);
+      const total = allSongs.length;
+      const shown = filtered.length;
+
+      heroCountEl.textContent = `${total} canción${total === 1 ? "" : "es"}`;
+
+      if(searchQuery.trim() || activeFilter !== "all"){
+        resultsInfoEl.textContent = `Mostrando ${shown} de ${total}`;
+      } else {
+        resultsInfoEl.textContent = "";
+      }
+
+      if(!total){
+        songListEl.innerHTML = "";
+        emptyStateEl.hidden = false;
+        emptyStateEl.querySelector("h3").textContent = "Playlist vacía";
+        emptyStateEl.querySelector("p").textContent = "Sincroniza para cargar canciones.";
         return;
       }
 
-      songListEl.className = "song-list";
-      songListEl.innerHTML = songs.map(song => {
-        const user = song.insertedBy || "Desconocido";
-        const badgeClass = userBadgeClass(user);
+      if(!shown){
+        songListEl.innerHTML = "";
+        emptyStateEl.hidden = false;
+        emptyStateEl.querySelector("h3").textContent = "No hay resultados";
+        emptyStateEl.querySelector("p").textContent = "Prueba otro término de búsqueda o cambia el filtro.";
+        return;
+      }
+
+      emptyStateEl.hidden = true;
+      songListEl.innerHTML = filtered.map((song, i) => {
+        const user = song.insertedBy || "";
+        const selected = escapeHtml(user);
+        const dotClass = ownerDotClass(user);
         return `
-          <article class="song">
-            <div>
-              <p class="song-title">${escapeHtml(song.title || "Sin título")}</p>
-              <p class="song-artist">${escapeHtml(song.artist || "Artista desconocido")}</p>
-            </div>
-            <span class="user-badge ${badgeClass}">${escapeHtml(user)}</span>
-            <div class="song-meta">
-              <span>Añadida: ${formatDate(song.insertedAt)}</span>
-              ${song.updatedAt && song.updatedAt !== song.insertedAt
-                ? `<span>· Actualizada: ${formatDate(song.updatedAt)}</span>`
-                : ""}
-            </div>
-          </article>
+          <tr class="track-row" data-song-id="${escapeHtml(song.id)}">
+            <td>
+              <span class="idx-num">${i + 1}</span>
+              <span class="play-hint">♪</span>
+            </td>
+            <td class="track-main">
+              <div class="track-title">${escapeHtml(song.title || "Sin título")}</div>
+              <div class="track-artist">${escapeHtml(song.artist || "Artista desconocido")}</div>
+            </td>
+            <td>
+              <span class="owner-badge">
+                <span class="owner-dot ${dotClass}"></span>
+                ${escapeHtml(userLabel(user))}
+              </span>
+            </td>
+            <td class="col-date">${formatDate(song.insertedAt)}</td>
+            <td>
+              <div class="row-action">
+                <select data-song-id="${escapeHtml(song.id)}" aria-label="Asignar canción">
+                  <option value="" ${selected === "" ? "selected" : ""}>Sin asignar</option>
+                  <option value="Unai" ${selected === "Unai" ? "selected" : ""}>Unai</option>
+                  <option value="June" ${selected === "June" ? "selected" : ""}>June</option>
+                </select>
+                <button type="button" class="btn-save-row" data-song-id="${escapeHtml(song.id)}">Guardar</button>
+              </div>
+            </td>
+            <td>
+              <button
+                type="button"
+                class="btn-delete-row"
+                data-song-id="${escapeHtml(song.id)}"
+                data-track-title="${escapeHtml(song.title || "Sin título")}"
+                title="Eliminar de ambas playlists"
+                aria-label="Eliminar canción"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/>
+                </svg>
+              </button>
+            </td>
+          </tr>
         `;
       }).join("");
     }
 
-    function fetchHelpMessage(err){
-      if(location.protocol === "file:"){
-        return "<br><br>Abre el front desde S3 o con <code>python -m http.server</code>.";
+    async function deleteTrack(songId, title, buttonEl){
+      if(!confirm(`¿Eliminar "${title}" de las playlists de Unai y June?`)){
+        return;
       }
-      if(String(err).includes("Failed to fetch")){
-        return "<br><br>Si el sync funciona pero la lista no carga, regenera <code>songs.json</code> con sincronizar.";
+
+      buttonEl.disabled = true;
+      setStatus("warn", "Eliminando…");
+      setChip("Eliminando");
+
+      try{
+        const res = await fetch(LAMBDA_URL, {
+          method: "POST",
+          mode: "cors",
+          headers: buildHeaders("POST"),
+          body: JSON.stringify({
+            action: "delete_track",
+            songId: String(songId),
+          }),
+        });
+
+        const data = await parseJsonResponse(res);
+        if(!res.ok || !data.ok) throw new Error(data.error || `HTTP ${res.status}`);
+        if(data.action !== "delete_track"){
+          throw new Error("Despliega la Lambda nueva (push a main).");
+        }
+
+        allSongs = allSongs.filter(s => String(s.id) !== String(songId));
+        renderSongs();
+
+        await new Promise(r => setTimeout(r, 400));
+        const refreshed = await loadSongsFromCache();
+        allSongs = refreshed.songs || [];
+        renderSongs();
+
+        setStatus("ok", "Eliminada");
+        setChip("Listo");
+      }catch(err){
+        setStatus("bad", "Error al eliminar");
+        setChip("Error");
+        alert(String(err.message || err));
+      }finally{
+        buttonEl.disabled = false;
       }
-      return "";
+    }
+
+    async function saveInsertedBy(songId, insertedBy, buttonEl){
+      buttonEl.disabled = true;
+      setStatus("warn", "Guardando…");
+      setChip("Guardando");
+
+      try{
+        const res = await fetch(LAMBDA_URL, {
+          method: "POST",
+          mode: "cors",
+          headers: buildHeaders("POST"),
+          body: JSON.stringify({
+            action: "update_inserted_by",
+            songId: String(songId),
+            insertedBy: insertedBy || null,
+          }),
+        });
+
+        const data = await parseJsonResponse(res);
+        if(!res.ok || !data.ok) throw new Error(data.error || `HTTP ${res.status}`);
+        if(data.action !== "update_inserted_by"){
+          throw new Error("Despliega la Lambda nueva (push a main).");
+        }
+
+        await new Promise(r => setTimeout(r, 400));
+        const refreshed = await loadSongsFromCache();
+        allSongs = refreshed.songs || [];
+        renderSongs();
+        setStatus("ok", "Guardado");
+        setChip("Listo");
+      }catch(err){
+        setStatus("bad", "Error al guardar");
+        setChip("Error");
+      }finally{
+        buttonEl.disabled = false;
+      }
     }
 
     async function parseJsonResponse(res){
       const text = await res.text();
-      try {
-        return JSON.parse(text);
-      } catch {
-        throw new Error(`Respuesta no JSON (${res.status}): ${text.slice(0, 200)}`);
-      }
+      try { return JSON.parse(text); }
+      catch { throw new Error(`Respuesta no JSON (${res.status})`); }
     }
 
     async function loadSongsFromCache(){
       const res = await fetch(`${SONGS_URL}?t=${Date.now()}`, { cache: "no-store" });
-      if(res.status === 404){
-        return { ok: true, count: 0, songs: [] };
-      }
-      if(!res.ok){
-        throw new Error(`No se pudo leer songs.json (${res.status})`);
-      }
+      if(res.status === 404) return { ok: true, count: 0, songs: [] };
+      if(!res.ok) throw new Error(`No se pudo leer songs.json (${res.status})`);
       const data = await parseJsonResponse(res);
-      if(!data.ok){
-        throw new Error(data.error || "songs.json inválido");
-      }
+      if(!data.ok) throw new Error(data.error || "songs.json inválido");
       return data;
     }
 
     async function refreshSongsCacheFromLambda(){
       try{
-        await fetch(LAMBDA_URL, {
-          method: "GET",
-          mode: "cors",
-          headers: buildHeaders("GET"),
-        });
-      }catch{
-        // El navegador puede bloquear la URL de Lambda; songs.json se regenera al sincronizar.
-      }
+        await fetch(LAMBDA_URL, { method: "GET", mode: "cors", headers: buildHeaders("GET") });
+      }catch{ /* ok */ }
     }
 
     async function fetchSongs(regenerateCache){
       if(location.protocol === "file:"){
-        setChip("bad","file://");
-        setStatus("bad", "<strong>Abre el front desde S3</strong>, no como archivo local.");
-        songListEl.className = "song-list empty";
-        songListEl.textContent = "Usa la URL del bucket S3.";
+        setStatus("bad", "Abre desde S3");
+        setChip("file://");
         return;
       }
 
       refreshBtn.disabled = true;
-      setChip("run","Cargando");
+      setStatus("warn", "Cargando…");
+      setChip("Cargando");
 
       try{
-        if(regenerateCache){
-          setStatus("warn", "<strong>Actualizando</strong> canciones desde DynamoDB…");
-          await refreshSongsCacheFromLambda();
-        }
-
+        if(regenerateCache) await refreshSongsCacheFromLambda();
         const data = await loadSongsFromCache();
-        renderSongs(data.songs || []);
-        setChip("ok","Actualizado");
-        setStatus("ok", `<strong>Lista cargada.</strong> ${data.count || 0} canciones registradas.`);
+        allSongs = data.songs || [];
+        renderSongs();
+        setStatus("ok", `${allSongs.length} canciones`);
+        setChip("Listo");
       }catch(err){
-        setChip("bad","Error");
-        setStatus("bad",
-          `<strong>No se pudo cargar la lista.</strong><br><code>${escapeHtml(String(err))}</code>`
-          + fetchHelpMessage(err)
-          + `<br><br>Si es la primera vez, pulsa <strong>Sincronizar playlist</strong> para generar <code>songs.json</code>.`
-        );
-        songListEl.className = "song-list empty";
-        songListEl.textContent = "No hay songs.json todavía. Ejecuta un sync primero.";
+        setStatus("bad", "Error al cargar");
+        setChip("Error");
+        allSongs = [];
+        renderSongs();
       }finally{
         refreshBtn.disabled = false;
       }
@@ -494,45 +791,68 @@
     async function runSync(){
       runBtn.disabled = true;
       refreshBtn.disabled = true;
-      runBtn.textContent = "Sincronizando…";
-      setChip("run","Sincronizando");
-      setStatus("warn", "<strong>Estado:</strong> ejecutando sync en Lambda…");
-
-      const t0 = performance.now();
+      setStatus("warn", "Sincronizando…");
+      setChip("Sync…");
 
       try{
         const res = await fetch(LAMBDA_URL, {
           method: "POST",
           mode: "cors",
           headers: buildHeaders("POST"),
-          body: JSON.stringify({ source: "music-control-web", ts: new Date().toISOString() }),
+          body: JSON.stringify({
+            action: "sync",
+            source: "music-control-web",
+            ts: new Date().toISOString(),
+          }),
         });
 
         const data = await parseJsonResponse(res);
-        const ms = Math.round(performance.now() - t0);
+        if(!res.ok || !data.ok) throw new Error(data.error || `HTTP ${res.status}`);
 
-        if(!res.ok || !data.ok){
-          throw new Error(data.error || `HTTP ${res.status}`);
-        }
-
-        setChip("ok","OK");
-        setStatus("ok", `<strong>Sync completado</strong> en ${ms} ms. Recargando lista…`);
         await fetchSongs(false);
+        setStatus("ok", "Sync OK");
+        setChip("Listo");
       }catch(err){
-        setChip("bad","Error");
-        setStatus("bad",
-          `<strong>Fallo en el sync.</strong><br><code>${escapeHtml(String(err))}</code>`
-          + fetchHelpMessage(err)
-        );
+        setStatus("bad", "Error sync");
+        setChip("Error");
       }finally{
         runBtn.disabled = false;
         refreshBtn.disabled = false;
-        runBtn.textContent = "Sincronizar playlist";
       }
     }
 
+    searchInput.addEventListener("input", () => {
+      searchQuery = searchInput.value;
+      renderSongs();
+    });
+
+    filterChips.forEach(chip => {
+      chip.addEventListener("click", () => {
+        filterChips.forEach(c => c.classList.remove("active"));
+        chip.classList.add("active");
+        activeFilter = chip.dataset.filter;
+        renderSongs();
+      });
+    });
+
     runBtn.addEventListener("click", runSync);
     refreshBtn.addEventListener("click", () => fetchSongs(true));
+
+    songListEl.addEventListener("click", (event) => {
+      const deleteBtn = event.target.closest(".btn-delete-row");
+      if(deleteBtn){
+        deleteTrack(deleteBtn.dataset.songId, deleteBtn.dataset.trackTitle, deleteBtn);
+        return;
+      }
+
+      const button = event.target.closest(".btn-save-row");
+      if(!button) return;
+      const songId = button.dataset.songId;
+      const select = songListEl.querySelector(`select[data-song-id="${CSS.escape(songId)}"]`);
+      if(!select) return;
+      saveInsertedBy(songId, select.value, button);
+    });
+
     fetchSongs(false);
   </script>
 </body>

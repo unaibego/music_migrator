@@ -267,6 +267,42 @@ class TidalUserClient:
                     f"en el rango [{i}, {i+len(chunk)}): {e}"
                 ) from e
 
+    def remove_tracks_from_playlist(self, pl, track_ids: Iterable[int]) -> bool:
+        """Elimina pistas de una playlist por track ID de Tidal."""
+        self._ensure_logged()
+
+        media_ids = {str(int(t)) for t in track_ids if t is not None}
+        if not media_ids:
+            return True
+
+        if not hasattr(pl, "tracks"):
+            raise RuntimeError("La playlist no permite eliminar pistas.")
+
+        track_ids_in_pl = [str(getattr(track, "id", "")) for track in pl.tracks()]
+        matching_indices = [
+            i for i, item in enumerate(track_ids_in_pl) if item in media_ids
+        ]
+        if not matching_indices:
+            return True
+
+        if hasattr(pl, "remove_by_indices"):
+            return bool(pl.remove_by_indices(matching_indices))
+
+        if hasattr(pl, "delete_by_id"):
+            try:
+                return bool(pl.delete_by_id(list(media_ids)))
+            except ValueError:
+                return True
+
+        removed = False
+        if hasattr(pl, "remove_by_id"):
+            for media_id in media_ids:
+                if pl.remove_by_id(media_id):
+                    removed = True
+            return removed
+
+        raise RuntimeError("La playlist no soporta eliminación de pistas.")
+
 
     def set_playlist_image(self, pl, image_bytes: bytes) -> bool:
         """

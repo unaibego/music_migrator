@@ -205,6 +205,12 @@ class DynamoHandler:
         except ClientError as e:
             raise Exception(f"Error leyendo canción: {e}") from e
 
+    def delete_song_by_id(self, song_id: str) -> None:
+        try:
+            self.table.delete_item(Key={"id": song_id})
+        except ClientError as e:
+            raise Exception(f"Error eliminando canción: {e}") from e
+
     def list_playlist_songs(self, playlist_id: str) -> list[Dict[str, Any]]:
         items: list[Dict[str, Any]] = []
 

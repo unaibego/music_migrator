@@ -290,6 +290,17 @@ class TidalLibrary:
         if ids:
             self.client.add_tracks_to_playlist(pl, ids)
 
+    def remove_tracks_by_ids(
+        self,
+        pl,
+        track_ids: Iterable[int],
+    ) -> bool:
+        """Elimina pistas de la playlist por ID de Tidal."""
+        ids = [int(tid) for tid in track_ids if tid is not None]
+        if not ids:
+            return True
+        return self.client.remove_tracks_from_playlist(pl, ids)
+
     # -------------------------------
     # PLANIFICACIÓN / INSERCIÓN POR METADATOS
     # -------------------------------

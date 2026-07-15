@@ -107,11 +107,41 @@ def _run_sync() -> Dict[str, Any]:
     return {"ok": True, "action": "sync", "count": count}
 
 
+def _delete_track(body: Dict[str, Any]) -> Dict[str, Any]:
+    from src.services.tidal_client import TidalUserClient
+    from src.services.tidal_library import TidalLibrary
+    from src.services.playlist_track_delete import PlaylistTrackDeleter
+
+    song_id = body.get("songId")
+    if not song_id:
+        raise ValueError("Falta songId")
+
+    tidal_unai = TidalUserClient(user_name="Unai")
+    tidal_unai.authenticate()
+    tidal_june = TidalUserClient(user_name="June")
+    tidal_june.authenticate()
+
+    deleter = PlaylistTrackDeleter(
+        tidal_a=TidalLibrary(tidal_unai),
+        tidal_b=TidalLibrary(tidal_june),
+    )
+    result = deleter.delete_track(str(song_id))
+    count = _export_songs()
+    return {
+        "ok": True,
+        "action": "delete_track",
+        "count": count,
+        **result,
+    }
+
+
 def _handle_post(event: Dict[str, Any]) -> Dict[str, Any]:
     body = _parse_event_body(event)
     action = body.get("action", "sync")
     if action == "update_inserted_by":
         return _update_inserted_by(body)
+    if action == "delete_track":
+        return _delete_track(body)
     return _run_sync()
 
 
