@@ -316,7 +316,6 @@
 
   <script>
     const LAMBDA_URL = "https://vqgm2vub2zdeu3xjbhoo54oj6e0itdfj.lambda-url.eu-north-1.on.aws/";
-    const SONGS_URL = new URL("songs.json", window.location.href).href;
     const CLIENT_TOKEN = "";
 
     const runBtn = document.getElementById("runBtn");
@@ -409,58 +408,10 @@
       }).join("");
     }
 
-    function fetchHelpMessage(err){
-      if(location.protocol === "file:"){
-        return "<br><br>Abre el front desde S3 o con <code>python -m http.server</code>.";
-      }
-      if(String(err).includes("Failed to fetch")){
-        return "<br><br>Si el sync funciona pero la lista no carga, regenera <code>songs.json</code> con sincronizar.";
-      }
-      return "";
-    }
-
-    async function parseJsonResponse(res){
-      const text = await res.text();
-      try {
-        return JSON.parse(text);
-      } catch {
-        throw new Error(`Respuesta no JSON (${res.status}): ${text.slice(0, 200)}`);
-      }
-    }
-
-    async function loadSongsFromCache(){
-      const res = await fetch(`${SONGS_URL}?t=${Date.now()}`, { cache: "no-store" });
-      if(res.status === 404){
-        return { ok: true, count: 0, songs: [] };
-      }
-      if(!res.ok){
-        throw new Error(`No se pudo leer songs.json (${res.status})`);
-      }
-      const data = await parseJsonResponse(res);
-      if(!data.ok){
-        throw new Error(data.error || "songs.json inválido");
-      }
-      return data;
-    }
-
-    async function refreshSongsCacheFromLambda(){
-      try{
-        await fetch(LAMBDA_URL, {
-          method: "GET",
-          mode: "cors",
-          headers: buildHeaders("GET"),
-        });
-      }catch{
-        // El navegador puede bloquear la URL de Lambda; songs.json se regenera al sincronizar.
-      }
-    }
-
-    async function fetchSongs(regenerateCache){
-      if(location.protocol === "file:"){
-        setChip("bad","file://");
-        setStatus("bad", "<strong>Abre el front desde S3</strong>, no como archivo local.");
-        songListEl.className = "song-list empty";
-        songListEl.textContent = "Usa la URL del bucket S3.";
+    async function fetchSongs(){
+      if(!LAMBDA_URL){
+        setChip("bad","Configurar");
+        setStatus("bad", "<strong>Error:</strong> falta <code>LAMBDA_URL</code>.");
         return;
       }
 
@@ -468,24 +419,26 @@
       setChip("run","Cargando");
 
       try{
-        if(regenerateCache){
-          setStatus("warn", "<strong>Actualizando</strong> canciones desde DynamoDB…");
-          await refreshSongsCacheFromLambda();
+        const res = await fetch(LAMBDA_URL, {
+          method: "GET",
+          mode: "cors",
+          headers: buildHeaders("GET"),
+        });
+
+        const data = await res.json();
+
+        if(!res.ok || !data.ok){
+          throw new Error(data.error || `HTTP ${res.status}`);
         }
 
-        const data = await loadSongsFromCache();
         renderSongs(data.songs || []);
         setChip("ok","Actualizado");
-        setStatus("ok", `<strong>Lista cargada.</strong> ${data.count || 0} canciones registradas.`);
+        setStatus("ok", `<strong>Lista cargada.</strong> ${data.count || 0} canciones en la base de datos.`);
       }catch(err){
         setChip("bad","Error");
-        setStatus("bad",
-          `<strong>No se pudo cargar la lista.</strong><br><code>${escapeHtml(String(err))}</code>`
-          + fetchHelpMessage(err)
-          + `<br><br>Si es la primera vez, pulsa <strong>Sincronizar playlist</strong> para generar <code>songs.json</code>.`
-        );
+        setStatus("bad", `<strong>No se pudo cargar la lista.</strong><br><code>${escapeHtml(String(err))}</code>`);
         songListEl.className = "song-list empty";
-        songListEl.textContent = "No hay songs.json todavía. Ejecuta un sync primero.";
+        songListEl.textContent = "Error al cargar canciones.";
       }finally{
         refreshBtn.disabled = false;
       }
@@ -508,7 +461,7 @@
           body: JSON.stringify({ source: "music-control-web", ts: new Date().toISOString() }),
         });
 
-        const data = await parseJsonResponse(res);
+        const data = await res.json();
         const ms = Math.round(performance.now() - t0);
 
         if(!res.ok || !data.ok){
@@ -517,13 +470,10 @@
 
         setChip("ok","OK");
         setStatus("ok", `<strong>Sync completado</strong> en ${ms} ms. Recargando lista…`);
-        await fetchSongs(false);
+        await fetchSongs();
       }catch(err){
         setChip("bad","Error");
-        setStatus("bad",
-          `<strong>Fallo en el sync.</strong><br><code>${escapeHtml(String(err))}</code>`
-          + fetchHelpMessage(err)
-        );
+        setStatus("bad", `<strong>Fallo en el sync.</strong><br><code>${escapeHtml(String(err))}</code>`);
       }finally{
         runBtn.disabled = false;
         refreshBtn.disabled = false;
@@ -532,8 +482,8 @@
     }
 
     runBtn.addEventListener("click", runSync);
-    refreshBtn.addEventListener("click", () => fetchSongs(true));
-    fetchSongs(false);
+    refreshBtn.addEventListener("click", fetchSongs);
+    fetchSongs();
   </script>
 </body>
 </html>
