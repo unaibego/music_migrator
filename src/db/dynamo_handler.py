@@ -52,7 +52,7 @@ class DynamoHandler:
         playlist_id: str,
         track_id: str,
         title: str,
-        inserted_by: str,
+        inserted_by: Optional[str] = None,
         artist: Optional[str] = None,
     ) -> str:
         """
@@ -63,12 +63,14 @@ class DynamoHandler:
         existing = self._find_by_playlist_and_track(playlist_id, track_id)
 
         if existing:
-            update_expr = "SET updatedAt = :updatedAt, title = :title, insertedBy = :insertedBy"
+            update_expr = "SET updatedAt = :updatedAt, title = :title"
             expr_values: Dict[str, Any] = {
                 ":updatedAt": now,
                 ":title": title,
-                ":insertedBy": inserted_by,
             }
+            if inserted_by is not None:
+                update_expr += ", insertedBy = :insertedBy"
+                expr_values[":insertedBy"] = inserted_by
             if artist:
                 update_expr += ", artist = :artist"
                 expr_values[":artist"] = artist
@@ -86,10 +88,11 @@ class DynamoHandler:
             "playlistId": playlist_id,
             "trackId": track_id,
             "title": title,
-            "insertedBy": inserted_by,
             "insertedAt": now,
             "updatedAt": now,
         }
+        if inserted_by is not None:
+            item["insertedBy"] = inserted_by
         if artist:
             item["artist"] = artist
 
@@ -100,12 +103,52 @@ class DynamoHandler:
         )
         return song_id
 
+    def import_track_if_missing(
+        self,
+        playlist_id: str,
+        track_id: str,
+        title: str,
+        artist: Optional[str] = None,
+    ) -> tuple[str, bool]:
+        """Importa una canción con insertedBy vacío. Devuelve (id, created)."""
+        existing = self._find_by_playlist_and_track(playlist_id, track_id)
+        if existing:
+            return existing["id"], False
+
+        song_id = self.record_added_track(
+            playlist_id=playlist_id,
+            track_id=track_id,
+            title=title,
+            inserted_by=None,
+            artist=artist,
+        )
+        return song_id, True
+
+    def update_inserted_by(self, song_id: str, inserted_by: Optional[str]) -> None:
+        now = self._now_iso()
+        if inserted_by is None:
+            self.table.update_item(
+                Key={"id": song_id},
+                UpdateExpression="REMOVE insertedBy SET updatedAt = :updatedAt",
+                ExpressionAttributeValues={":updatedAt": now},
+            )
+            return
+
+        self.table.update_item(
+            Key={"id": song_id},
+            UpdateExpression="SET insertedBy = :insertedBy, updatedAt = :updatedAt",
+            ExpressionAttributeValues={
+                ":insertedBy": inserted_by,
+                ":updatedAt": now,
+            },
+        )
+
     def put_song(
         self,
         playlist_id: str,
         track_id: str,
         title: str,
-        inserted_by: str,
+        inserted_by: Optional[str] = None,
         artist: Optional[str] = None,
         inserted_at: Optional[str] = None,
         extra: Optional[Dict[str, Any]] = None,
@@ -119,10 +162,11 @@ class DynamoHandler:
             "playlistId": playlist_id,
             "trackId": track_id,
             "title": title,
-            "insertedBy": inserted_by,
             "insertedAt": now,
             "updatedAt": now,
         }
+        if inserted_by is not None:
+            item["insertedBy"] = inserted_by
 
         if artist:
             item["artist"] = artist
