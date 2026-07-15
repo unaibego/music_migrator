@@ -408,10 +408,46 @@
       }).join("");
     }
 
+    function fetchHelpMessage(err){
+      if(location.protocol === "file:"){
+        return "<br><br><strong>Causa probable:</strong> has abierto el HTML como archivo local (<code>file://</code>). "
+          + "El navegador bloquea las peticiones. Súbelo al blob/S3 o prueba con "
+          + "<code>python -m http.server 8080</code> y abre <code>http://localhost:8080/front.html</code>.";
+      }
+      if(String(err).includes("Failed to fetch")){
+        return "<br><br><strong>Revisa:</strong><br>"
+          + "1) CORS de la Function URL (GET y POST, origin <code>*</code>)<br>"
+          + "2) Que la Lambda desplegada tenga el handler con GET<br>"
+          + "3) Prueba abrir la URL de Lambda en el navegador:<br>"
+          + `<a href="${LAMBDA_URL}" target="_blank" rel="noopener">${escapeHtml(LAMBDA_URL)}</a>`;
+      }
+      return "";
+    }
+
+    async function parseJsonResponse(res){
+      const text = await res.text();
+      try {
+        return JSON.parse(text);
+      } catch {
+        throw new Error(`Respuesta no JSON (${res.status}): ${text.slice(0, 200)}`);
+      }
+    }
+
     async function fetchSongs(){
       if(!LAMBDA_URL){
         setChip("bad","Configurar");
         setStatus("bad", "<strong>Error:</strong> falta <code>LAMBDA_URL</code>.");
+        return;
+      }
+
+      if(location.protocol === "file:"){
+        setChip("bad","file://");
+        setStatus("bad",
+          "<strong>No funciona abriendo el archivo directamente.</strong> "
+          + "Sirve el HTML por HTTP (S3, blob o <code>python -m http.server</code>)."
+        );
+        songListEl.className = "song-list empty";
+        songListEl.textContent = "Abre el front desde una URL http(s), no como archivo local.";
         return;
       }
 
@@ -425,7 +461,7 @@
           headers: buildHeaders("GET"),
         });
 
-        const data = await res.json();
+        const data = await parseJsonResponse(res);
 
         if(!res.ok || !data.ok){
           throw new Error(data.error || `HTTP ${res.status}`);
@@ -436,7 +472,10 @@
         setStatus("ok", `<strong>Lista cargada.</strong> ${data.count || 0} canciones en la base de datos.`);
       }catch(err){
         setChip("bad","Error");
-        setStatus("bad", `<strong>No se pudo cargar la lista.</strong><br><code>${escapeHtml(String(err))}</code>`);
+        setStatus("bad",
+          `<strong>No se pudo cargar la lista.</strong><br><code>${escapeHtml(String(err))}</code>`
+          + fetchHelpMessage(err)
+        );
         songListEl.className = "song-list empty";
         songListEl.textContent = "Error al cargar canciones.";
       }finally{
@@ -461,7 +500,7 @@
           body: JSON.stringify({ source: "music-control-web", ts: new Date().toISOString() }),
         });
 
-        const data = await res.json();
+        const data = await parseJsonResponse(res);
         const ms = Math.round(performance.now() - t0);
 
         if(!res.ok || !data.ok){
@@ -473,7 +512,10 @@
         await fetchSongs();
       }catch(err){
         setChip("bad","Error");
-        setStatus("bad", `<strong>Fallo en el sync.</strong><br><code>${escapeHtml(String(err))}</code>`);
+        setStatus("bad",
+          `<strong>Fallo en el sync.</strong><br><code>${escapeHtml(String(err))}</code>`
+          + fetchHelpMessage(err)
+        );
       }finally{
         runBtn.disabled = false;
         refreshBtn.disabled = false;

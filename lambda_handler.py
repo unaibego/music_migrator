@@ -1,18 +1,13 @@
 import json
 from decimal import Decimal
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 
 from src.services.tidal_client import TidalUserClient
 from src.services.tidal_library import TidalLibrary
 from src.services.tidal_playlist_sync import TidalPlaylistsSynchronizer
 from src.db.dynamo_handler import DynamoHandler
 
-CORS_HEADERS = {
-    "Content-Type": "application/json",
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type, X-Client-Token",
-}
+JSON_HEADERS = {"Content-Type": "application/json"}
 
 
 def _json_default(value: Any) -> Any:
@@ -26,7 +21,7 @@ def _json_default(value: Any) -> Any:
 def _http_response(status_code: int, body: Dict[str, Any]) -> Dict[str, Any]:
     return {
         "statusCode": status_code,
-        "headers": CORS_HEADERS,
+        "headers": JSON_HEADERS,
         "body": json.dumps(body, default=_json_default),
     }
 
@@ -71,13 +66,6 @@ def _list_songs() -> Dict[str, Any]:
 
 def lambda_handler(event, context):
     method = _get_http_method(event or {})
-
-    if method == "OPTIONS":
-        return {
-            "statusCode": 204,
-            "headers": CORS_HEADERS,
-            "body": "",
-        }
 
     if method == "GET":
         try:
