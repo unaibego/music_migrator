@@ -1,37 +1,94 @@
+import json
+from decimal import Decimal
+from typing import Any, Dict, Optional
+
 from src.services.tidal_client import TidalUserClient
 from src.services.tidal_library import TidalLibrary
 from src.services.tidal_playlist_sync import TidalPlaylistsSynchronizer
+from src.db.dynamo_handler import DynamoHandler
+
+CORS_HEADERS = {
+    "Content-Type": "application/json",
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, X-Client-Token",
+}
 
 
+def _json_default(value: Any) -> Any:
+    if isinstance(value, Decimal):
+        if value % 1 == 0:
+            return int(value)
+        return float(value)
+    raise TypeError(f"Object of type {type(value).__name__} is not JSON serializable")
 
-from src.core.settings.youtube_service import get_youtube_settings
-from src.core.settings.spotify_service import get_spotify_settings
 
-youtube_settings = get_youtube_settings()
-spotify_settings = get_spotify_settings()
+def _http_response(status_code: int, body: Dict[str, Any]) -> Dict[str, Any]:
+    return {
+        "statusCode": status_code,
+        "headers": CORS_HEADERS,
+        "body": json.dumps(body, default=_json_default),
+    }
 
 
-def lambda_handler(event, context):
-        
+def _get_http_method(event: Dict[str, Any]) -> str:
+    if not event:
+        return "POST"
+    request_context = event.get("requestContext") or {}
+    http = request_context.get("http") or {}
+    return (http.get("method") or event.get("httpMethod") or "POST").upper()
+
+
+def _run_sync() -> Dict[str, Any]:
     tidal_unai = TidalUserClient(user_name="Unai")
     tidal_unai.authenticate()
     tidal_june = TidalUserClient(user_name="June")
     tidal_june.authenticate()
 
-
-
     tidal_lib_unai = TidalLibrary(tidal_unai)
     tidal_lib_june = TidalLibrary(tidal_june)
 
-
     sync = TidalPlaylistsSynchronizer(
-            tidal_a=tidal_lib_unai,
-            tidal_b=tidal_lib_june,
-            avoid_duplicates=True,
-            ask_per_playlist=False,
-        )
-
+        tidal_a=tidal_lib_unai,
+        tidal_b=tidal_lib_june,
+        avoid_duplicates=True,
+        ask_per_playlist=False,
+        dynamo_handler=DynamoHandler(),
+    )
     sync.run()
+    return {"ok": True, "action": "sync"}
 
 
-    return {"ok": True}
+def _list_songs() -> Dict[str, Any]:
+    songs = DynamoHandler().list_all_songs()
+    return {
+        "ok": True,
+        "action": "list",
+        "count": len(songs),
+        "songs": songs,
+    }
+
+
+def lambda_handler(event, context):
+    method = _get_http_method(event or {})
+
+    if method == "OPTIONS":
+        return {
+            "statusCode": 204,
+            "headers": CORS_HEADERS,
+            "body": "",
+        }
+
+    if method == "GET":
+        try:
+            return _http_response(200, _list_songs())
+        except Exception as e:
+            return _http_response(500, {"ok": False, "error": str(e)})
+
+    if method == "POST":
+        try:
+            return _http_response(200, _run_sync())
+        except Exception as e:
+            return _http_response(500, {"ok": False, "error": str(e)})
+
+    return _http_response(405, {"ok": False, "error": f"Method {method} not allowed"})

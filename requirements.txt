@@ -3,6 +3,7 @@ pydantic_settings == 2.0.3
 urllib3==2.0.0
 annotated-types==0.7.0
 boto3==1.42.19
+awscrt==0.29.2
 certifi==2025.10.5
 charset-normalizer==3.4.4
 git-filter-repo==2.47.0

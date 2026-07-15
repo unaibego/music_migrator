@@ -173,7 +173,7 @@ class SpotifyLibrary:
             "limit": min(max(page_size, 1), 100),
             # afinamos fields: elementos necesarios + paginación
             "fields": (
-                "items(added_at,track(id,name,duration_ms,is_local,"
+                "items(added_at, added_by, track(id,name,duration_ms,is_local,"
                 "album(id,name),artists(id,name))),next,total"
             )
         }
@@ -183,6 +183,7 @@ class SpotifyLibrary:
         for page in self._paginate(endpoint, params=params):
             for item in page.get("items", []) or []:
                 t = item.get("track")
+                u = item.get("added_by")
                 if not t:
                     continue  # puede haber items 'vacíos' o eliminados
                 artists = t.get("artists") or []
@@ -192,6 +193,7 @@ class SpotifyLibrary:
                     "duration_ms": t.get("duration_ms"),
                     "is_local": t.get("is_local"),
                     "added_at": item.get("added_at"),
+                    "added_by": u.get("id"),
                     "album": {
                         "id": (t.get("album") or {}).get("id"),
                         "name": (t.get("album") or {}).get("name"),

@@ -254,6 +254,25 @@ class TidalLibrary:
                 out.append(int(t["id"]))
         return out
 
+    def list_playlist_tracks_map(self, pl) -> Dict[int, Dict[str, str]]:
+        """Devuelve track_id -> {title, artist} para una playlist."""
+        items = self.client.list_all_playlist_tracks(pl)
+        out: Dict[int, Dict[str, str]] = {}
+        for t in items:
+            track_id = t.get("id")
+            if track_id is None:
+                continue
+            artists = ", ".join(
+                a.get("name", "")
+                for a in (t.get("artists") or [])
+                if a.get("name")
+            )
+            out[int(track_id)] = {
+                "title": t.get("title") or "",
+                "artist": artists,
+            }
+        return out
+
     def add_tracks_by_ids(
         self,
         pl,

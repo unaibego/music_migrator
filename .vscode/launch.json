@@ -63,6 +63,26 @@
             "envFile": "${workspaceFolder}/.env",
             "console": "integratedTerminal",
             "justMyCode": true
+        },
+        {
+            "name": "Dynamo handler",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "src.db.dynamo_handler",
+            "cwd": "${workspaceFolder}",
+            "envFile": "${workspaceFolder}/.env",
+            "console": "integratedTerminal",
+            "justMyCode": true
+        },
+        {
+            "name": "Spotify creator",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "src.get_spotify_creator",
+            "cwd": "${workspaceFolder}",
+            "envFile": "${workspaceFolder}/.env",
+            "console": "integratedTerminal",
+            "justMyCode": true
         }
     ]
 }
